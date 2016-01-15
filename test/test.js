@@ -98,461 +98,486 @@ describe('cloudant connector', function () {
   // });
   //
   
-  it('save should not return cloudant _id', function (done) {
-    Post.create({title: 'Post1', content: 'Post content'}, function (err, post) {
-      post.content = 'AAA';
-      post.save(function(err, p) {
-        should.not.exist(err)
-        should.not.exist(p._id);
-        p.id.should.be.equal(post.id);
-        p.content.should.be.equal('AAA')
+  // it('save should not return cloudant _id', function (done) {
+  //   Post.create({title: 'Post1', content: 'Post content'}, function (err, post) {
+  //     post.content = 'AAA';
+  //     post.save(function(err, p) {
+  //       should.not.exist(err)
+  //       should.not.exist(p._id);
+  //       p.id.should.be.equal(post.id);
+  //       p.content.should.be.equal('AAA')
 
-        done();
-      });
-    });
-  });
+  //       done();
+  //     });
+  //   });
+  // });
 
+  // it('hasMany should support additional conditions', function (done) {
+  //     User.create(function (e, u) {
+  //       u.posts.create({}, function (e, p) {
+  //         u.posts({where: {id: p.id}}, function (err, posts) {
+  //           should.not.exist(err);
+  //           posts.should.have.lengthOf(1);
+
+  //           done();
+  //         });
+  //       });
+  //     });
+  //   });
 
   it('hasMany should support additional conditions', function (done) {
-    User.create(function (e, u) {
-      u.posts.create({}, function (e, p) {
-        u.posts({where: {id: p.id}}, function (err, posts) {
-          should.not.exist(err);
-          posts.should.have.lengthOf(1);
-
-          done();
-        });
-      });
-    });
-  });
-
-    it('should allow to find by id using where', function (done) {
-    Post.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
-      Post.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
-        Post.find({where: {id: p1.id}}, function (err, p) {
-          should.not.exist(err);
-          should.exist(p && p[0]);
-          p.length.should.be.equal(1);
-          // Not strict equal
-          p[0].id.should.be.eql(p1.id);
-          done();
-        });
-      });
-    });
-  });
-
-  it('should allow to find by id using where inq', function (done) {
-    Post.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
-      Post.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
-        Post.find({where: {id: {inq: [p1.id]}}}, function (err, p) {
-          should.not.exist(err);
-          should.exist(p && p[0]);
-          p.length.should.be.equal(1);
-          // Not strict equal
-          p[0].id.should.be.eql(p1.id);
-          done();
-        });
-      });
-    });
-  });
-
-
-  describe('updateAll', function () {
-    it('should update the instance matching criteria', function (done) {
-      User.create({name: 'Al', age: 31, email:'al@strongloop'}, function (err1, createdusers1) {
-        should.not.exist(err1);
-        User.create({name: 'Simon', age: 32,  email:'simon@strongloop'}, function (err2, createdusers2) {
-          should.not.exist(err2);
-          User.create({name: 'Ray', age: 31,  email:'ray@strongloop'}, function (err3, createdusers3) {
-            should.not.exist(err3);
-
-            User.updateAll({age:31},{company:'strongloop.com'},function(err,updatedusers) {
-              should.not.exist(err);
-              updatedusers.should.have.property('count', 2);
-
-              User.find({where:{age:31}},function(err2,foundusers) {
-                should.not.exist(err2);
-                foundusers[0].company.should.be.equal('strongloop.com');
-                foundusers[1].company.should.be.equal('strongloop.com');
-
-                done();
-              });
-
-            });
-          });
-        });
-      });
-    });
-
-  });
-
-  it('updateOrCreate should update the instance', function (done) {
-    Post.create({title: 'a', content: 'AAA'}, function (err, post) {
-      post.title = 'b';
-      Post.updateOrCreate(post, function (err, p) {
-        should.not.exist(err);
-        p.id.should.be.equal(post.id);
-        p.content.should.be.equal(post.content);
-        should.not.exist(p._id);
-
-        Post.findById(post.id, function (err, p) {
-          p.id.should.be.eql(post.id);
-          should.not.exist(p._id);
-          p.content.should.be.equal(post.content);
-          p.title.should.be.equal('b');
-
-          done();
-        });
-      });
-
-    });
-  });
-
-  it('updateOrCreate should update the instance without removing existing properties', function (done) {
-      Post.create({title: 'a', content: 'AAA', comments: ['Comment1']}, function (err, post) {
-        post = post.toObject();
-        delete post.title;
-        delete post.comments;
-        Post.updateOrCreate(post, function (err, p) {
-          should.not.exist(err);
-          p.id.should.be.equal(post.id);
-          p.content.should.be.equal(post.content);
-          should.not.exist(p._id);
-
-          Post.findById(post.id, function (err, p) {
-            p.id.should.be.eql(post.id);
-            should.not.exist(p._id);
-            p.content.should.be.equal(post.content);
-            p.title.should.be.equal('a');
-            p.comments[0].should.be.equal('Comment1');
-
-            done();
-          });
-        });
-
-      });
-    });
-
-    it('updateOrCreate should create a new instance if it does not exist', function (done) {
-      var post = {id: '123e', title: 'a', content: 'AAA'};
-      Post.updateOrCreate(post, function (err, p) {
-        should.not.exist(err);
-        p.title.should.be.equal(post.title);
-        p.content.should.be.equal(post.content);
-        p.id.should.be.eql(post.id);
-        Post.findById(p.id, function (err, p) {
-          p.id.should.be.equal(post.id);
-          should.not.exist(p._id);
-          p.content.should.be.equal(post.content);
-          p.title.should.be.equal(post.title);
-          p.id.should.be.equal(post.id);
-
-          done();
-        });
-      });
-
-    });
-
-    it('save should update the instance with the same id', function (done) {
-      Post.create({title: 'a', content: 'AAA'}, function (err, post) {
-        post.title = 'b';
-        post.save(function (err, p) {
-          should.not.exist(err);
-          p.id.should.be.equal(post.id);
-          p.content.should.be.equal(post.content);
-          should.not.exist(p._id);
-          Post.findById(post.id, function (err, p) {
-            p.id.should.be.eql(post.id);
-            should.not.exist(p._id);
-            p.content.should.be.equal(post.content);
-            p.title.should.be.equal('b');
-
-            done();
-          });
-        });
-
-      });
-    });
-
-    it('save should update the instance without removing existing properties', function (done) {
-      Post.create({title: 'a', content: 'AAA'}, function (err, post) {
-        delete post.title;
-        post.save(function (err, p) {
-          should.not.exist(err);
-          p.id.should.be.equal(post.id);
-          p.content.should.be.equal(post.content);
-          should.not.exist(p._id);
-
-          Post.findById(post.id, function (err, p) {
-            p.id.should.be.eql(post.id);
-            should.not.exist(p._id);
-            p.content.should.be.equal(post.content);
-            p.title.should.be.equal('a');
-
-            done();
-          });
-        });
-
-      });
-    });
-
-    it('save should create a new instance if it does not exist', function (done) {
-      var post = new Post({id: '123e', title: 'a', content: 'AAA'});
-      post.save(post, function (err, p) {
-        should.not.exist(err);
-        p.title.should.be.equal(post.title);
-        p.content.should.be.equal(post.content);
-        p.id.should.be.equal(post.id);
-
-        Post.findById(p.id, function (err, p) {
-          p.id.should.be.equal(post.id);
-          should.not.exist(p._id);
-          p.content.should.be.equal(post.content);
-          p.title.should.be.equal(post.title);
-          p.id.should.be.equal(post.id);
-
-          done();
-        });
-      });
-
-    });
-
-    it('all return should honor filter.fields', function (done) {
-    var post = new Post({title: 'b', content: 'BBB'})
-    post.save(function (err, post) {
-      Post.all({fields: ['title'], where: {title: 'b'}}, function (err, posts) {
-        should.not.exist(err);
-        posts.should.have.lengthOf(1);
-        post = posts[0];
-        post.should.have.property('title', 'b');
-        post.should.have.property('content', undefined);
-        should.not.exist(post._id);
-        should.not.exist(post.id);
-
-        done();
-      });
-
-    });
-  });
-
-    it('find should order by id if the order is not set for the query filter',
-        function (done) {
-          PostWithStringId.create({id: '2', title: 'c', content: 'CCC'}, function (err, post) {
-            PostWithStringId.create({id: '1', title: 'd', content: 'DDD'}, function (err, post) {
-              PostWithStringId.find(function (err, posts) {
-                should.not.exist(err);
-                posts.length.should.be.equal(2);
-                posts[0].id.should.be.equal('1');
-
-                PostWithStringId.find({limit: 1, offset: 0}, function (err, posts) {
+    User.create({name: 'Al', age: 31, email:'al@strongloop'}, function (err1, u) {
+      u.posts.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
+            u.posts.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
+              User.find({
+                where: {
+                  name: "Al"
+                },include: {
+                relation: "posts",
+                scope: {
+                  where: {title: "Post1"}
+                }}}, function(err, p){
                   should.not.exist(err);
-                  posts.length.should.be.equal(1);
-                  posts[0].id.should.be.equal('1');
-
-                  PostWithStringId.find({limit: 1, offset: 1}, function (err, posts) {
-                    should.not.exist(err);
-                    posts.length.should.be.equal(1);
-                    posts[0].id.should.be.equal('2');
-                    done();
-                  });
-                });
-              });
-            });
-          });
-        });
-
-      it('should report error on duplicate keys', function (done) {
-        Post.create({title: 'd', content: 'DDD'}, function (err, post) {
-          Post.create({id: post.id, title: 'd', content: 'DDD'}, function (err, post) {
-            should.exist(err);
-            done();
-          });
-        });
-      });
-
-      // it('should allow to find using like', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {like: 'M.+st'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 1);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should allow to find using case insensitive like', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {like: 'm.+st', options: 'i'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 1);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should allow to find using case insensitive like', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {content: {like: 'HELLO', options: 'i'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 1);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should support like for no match', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {like: 'M.+XY'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 0);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should allow to find using nlike', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {nlike: 'M.+st'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 0);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should allow to find using case insensitive nlike', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {nlike: 'm.+st', options: 'i'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 0);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      //   it('should support nlike for no match', function (done) {
-      //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-      //       Post.find({where: {title: {nlike: 'M.+XY'}}}, function (err, posts) {
-      //         should.not.exist(err);
-      //         posts.should.have.property('length', 1);
-      //         done();
-      //       });
-      //     });
-      //   });
-
-      it('should support "and" operator that is satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {and: [{title: 'My Post'}, {content: 'Hello'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 1);
-              done();
-            });
-          });
-        });
-
-        it('should support "and" operator that is not satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {and: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 0);
-              done();
-            });
-          });
-        });
-
-        it('should support "or" that is satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {or: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 1);
-              done();
-            });
-          });
-        });
-
-        it('should support "or" operator that is not satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {or: [{title: 'My Post1'}, {content: 'Hello1'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 0);
-              done();
-            });
-          });
-        });
-
-        it('should support "nor" operator that is satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {nor: [{title: 'My Post1'}, {content: 'Hello1'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 1);
-              done();
-            });
-          });
-        });
-
-        it('should support "nor" operator that is not satisfied', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {nor: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 0);
-              done();
-            });
-          });
-        });
-
-        it('should support neq for match', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {title: {neq: 'XY'}}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 1);
-              done();
-            });
-          });
-        });
-
-        it('should support neq for no match', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.find({where: {title: {neq: 'My Post'}}}, function (err, posts) {
-              should.not.exist(err);
-              posts.should.have.property('length', 0);
-              done();
-            });
-          });
-        });
-
-        // The where object should be parsed by the connector
-        it('should support where for count', function (done) {
-          Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
-            Post.count({and: [{title: 'My Post'}, {content: 'Hello'}]}, function (err, count) {
-              should.not.exist(err);
-              count.should.be.equal(1);
-              Post.count({and: [{title: 'My Post1'}, {content: 'Hello'}]}, function (err, count) {
-                should.not.exist(err);
-                count.should.be.equal(0);
-                done();
-              });
-            });
-          });
-        });
-
-        // The where object should be parsed by the connector
-        it('should support where for destroyAll', function (done) {
-          Post.create({title: 'My Post1', content: 'Hello'}, function (err, post) {
-            Post.create({title: 'My Post2', content: 'Hello'}, function (err, post) {
-              Post.destroyAll({and: [
-                {title: 'My Post1'},
-                {content: 'Hello'}
-              ]}, function (err) {
-                should.not.exist(err);
-                Post.count(function (err, count) {
-                  should.not.exist(err);
-                  count.should.be.equal(1);
+                  should.exist(p && p[0]);
+                  p[0].name.should.be.equal("Al");
+                  p[0].posts.should.be.array;
+                  should.exist(p[0].posts);
+                  // var po = p[0].posts;
+                  // po.content.should.be.equal("Post2 content");
                   done();
                 });
-              });
             });
           });
-        });
+       });
+  });
+
+  //   it('should allow to find by id using where', function (done) {
+  //   Post.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
+  //     Post.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
+  //       Post.find({where: {id: p1.id}}, function (err, p) {
+  //         should.not.exist(err);
+  //         should.exist(p && p[0]);
+  //         p.length.should.be.equal(1);
+  //         // Not strict equal
+  //         p[0].id.should.be.eql(p1.id);
+  //         done();
+  //       });
+  //     });
+  //   });
+  // });
+
+  // it('should allow to find by id using where inq', function (done) {
+  //   Post.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
+  //     Post.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
+  //       Post.find({where: {id: {inq: [p1.id]}}}, function (err, p) {
+  //         should.not.exist(err);
+  //         should.exist(p && p[0]);
+  //         p.length.should.be.equal(1);
+  //         // Not strict equal
+  //         p[0].id.should.be.eql(p1.id);
+  //         done();
+  //       });
+  //     });
+  //   });
+  // });
+
+
+  // describe('updateAll', function () {
+  //   it('should update the instance matching criteria', function (done) {
+  //     User.create({name: 'Al', age: 31, email:'al@strongloop'}, function (err1, createdusers1) {
+  //       should.not.exist(err1);
+  //       User.create({name: 'Simon', age: 32,  email:'simon@strongloop'}, function (err2, createdusers2) {
+  //         should.not.exist(err2);
+  //         User.create({name: 'Ray', age: 31,  email:'ray@strongloop'}, function (err3, createdusers3) {
+  //           should.not.exist(err3);
+
+  //           User.updateAll({age:31},{company:'strongloop.com'},function(err,updatedusers) {
+  //             should.not.exist(err);
+  //             updatedusers.should.have.property('count', 2);
+
+  //             User.find({where:{age:31}},function(err2,foundusers) {
+  //               should.not.exist(err2);
+  //               foundusers[0].company.should.be.equal('strongloop.com');
+  //               foundusers[1].company.should.be.equal('strongloop.com');
+
+  //               done();
+  //             });
+
+  //           });
+  //         });
+  //       });
+  //     });
+  //   });
+
+  // });
+
+  // it('updateOrCreate should update the instance', function (done) {
+  //   Post.create({title: 'a', content: 'AAA'}, function (err, post) {
+  //     post.title = 'b';
+  //     Post.updateOrCreate(post, function (err, p) {
+  //       should.not.exist(err);
+  //       p.id.should.be.equal(post.id);
+  //       p.content.should.be.equal(post.content);
+  //       should.not.exist(p._id);
+
+  //       Post.findById(post.id, function (err, p) {
+  //         p.id.should.be.eql(post.id);
+  //         should.not.exist(p._id);
+  //         p.content.should.be.equal(post.content);
+  //         p.title.should.be.equal('b');
+
+  //         done();
+  //       });
+  //     });
+
+  //   });
+  // });
+
+  // it('updateOrCreate should update the instance without removing existing properties', function (done) {
+  //     Post.create({title: 'a', content: 'AAA', comments: ['Comment1']}, function (err, post) {
+  //       post = post.toObject();
+  //       delete post.title;
+  //       delete post.comments;
+  //       Post.updateOrCreate(post, function (err, p) {
+  //         should.not.exist(err);
+  //         p.id.should.be.equal(post.id);
+  //         p.content.should.be.equal(post.content);
+  //         should.not.exist(p._id);
+
+  //         Post.findById(post.id, function (err, p) {
+  //           p.id.should.be.eql(post.id);
+  //           should.not.exist(p._id);
+  //           p.content.should.be.equal(post.content);
+  //           p.title.should.be.equal('a');
+  //           p.comments[0].should.be.equal('Comment1');
+
+  //           done();
+  //         });
+  //       });
+
+  //     });
+  //   });
+
+  //   it('updateOrCreate should create a new instance if it does not exist', function (done) {
+  //     var post = {id: '123e', title: 'a', content: 'AAA'};
+  //     Post.updateOrCreate(post, function (err, p) {
+  //       should.not.exist(err);
+  //       p.title.should.be.equal(post.title);
+  //       p.content.should.be.equal(post.content);
+  //       p.id.should.be.eql(post.id);
+  //       Post.findById(p.id, function (err, p) {
+  //         p.id.should.be.equal(post.id);
+  //         should.not.exist(p._id);
+  //         p.content.should.be.equal(post.content);
+  //         p.title.should.be.equal(post.title);
+  //         p.id.should.be.equal(post.id);
+
+  //         done();
+  //       });
+  //     });
+
+  //   });
+
+  //   it('save should update the instance with the same id', function (done) {
+  //     Post.create({title: 'a', content: 'AAA'}, function (err, post) {
+  //       post.title = 'b';
+  //       post.save(function (err, p) {
+  //         should.not.exist(err);
+  //         p.id.should.be.equal(post.id);
+  //         p.content.should.be.equal(post.content);
+  //         should.not.exist(p._id);
+  //         Post.findById(post.id, function (err, p) {
+  //           p.id.should.be.eql(post.id);
+  //           should.not.exist(p._id);
+  //           p.content.should.be.equal(post.content);
+  //           p.title.should.be.equal('b');
+
+  //           done();
+  //         });
+  //       });
+
+  //     });
+  //   });
+
+  //   it('save should update the instance without removing existing properties', function (done) {
+  //     Post.create({title: 'a', content: 'AAA'}, function (err, post) {
+  //       delete post.title;
+  //       post.save(function (err, p) {
+  //         should.not.exist(err);
+  //         p.id.should.be.equal(post.id);
+  //         p.content.should.be.equal(post.content);
+  //         should.not.exist(p._id);
+
+  //         Post.findById(post.id, function (err, p) {
+  //           p.id.should.be.eql(post.id);
+  //           should.not.exist(p._id);
+  //           p.content.should.be.equal(post.content);
+  //           p.title.should.be.equal('a');
+
+  //           done();
+  //         });
+  //       });
+
+  //     });
+  //   });
+
+  //   it('save should create a new instance if it does not exist', function (done) {
+  //     var post = new Post({id: '123e', title: 'a', content: 'AAA'});
+  //     post.save(post, function (err, p) {
+  //       should.not.exist(err);
+  //       p.title.should.be.equal(post.title);
+  //       p.content.should.be.equal(post.content);
+  //       p.id.should.be.equal(post.id);
+
+  //       Post.findById(p.id, function (err, p) {
+  //         p.id.should.be.equal(post.id);
+  //         should.not.exist(p._id);
+  //         p.content.should.be.equal(post.content);
+  //         p.title.should.be.equal(post.title);
+  //         p.id.should.be.equal(post.id);
+
+  //         done();
+  //       });
+  //     });
+
+  //   });
+
+  //   it('all return should honor filter.fields', function (done) {
+  //   var post = new Post({title: 'b', content: 'BBB'})
+  //   post.save(function (err, post) {
+  //     Post.all({fields: ['title'], where: {title: 'b'}}, function (err, posts) {
+  //       should.not.exist(err);
+  //       posts.should.have.lengthOf(1);
+  //       post = posts[0];
+  //       post.should.have.property('title', 'b');
+  //       post.should.have.property('content', undefined);
+  //       should.not.exist(post._id);
+  //       should.not.exist(post.id);
+
+  //       done();
+  //     });
+
+  //   });
+  // });
+
+  //   it('find should order by id if the order is not set for the query filter',
+  //       function (done) {
+  //         PostWithStringId.create({id: '2', title: 'c', content: 'CCC'}, function (err, post) {
+  //           PostWithStringId.create({id: '1', title: 'd', content: 'DDD'}, function (err, post) {
+  //             PostWithStringId.find(function (err, posts) {
+  //               should.not.exist(err);
+  //               posts.length.should.be.equal(2);
+  //               posts[0].id.should.be.equal('1');
+
+  //               PostWithStringId.find({limit: 1, offset: 0}, function (err, posts) {
+  //                 should.not.exist(err);
+  //                 posts.length.should.be.equal(1);
+  //                 posts[0].id.should.be.equal('1');
+
+  //                 PostWithStringId.find({limit: 1, offset: 1}, function (err, posts) {
+  //                   should.not.exist(err);
+  //                   posts.length.should.be.equal(1);
+  //                   posts[0].id.should.be.equal('2');
+  //                   done();
+  //                 });
+  //               });
+  //             });
+  //           });
+  //         });
+  //       });
+
+  //     it('should report error on duplicate keys', function (done) {
+  //       Post.create({title: 'd', content: 'DDD'}, function (err, post) {
+  //         Post.create({id: post.id, title: 'd', content: 'DDD'}, function (err, post) {
+  //           should.exist(err);
+  //           done();
+  //         });
+  //       });
+  //     });
+
+  //     // it('should allow to find using like', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {like: 'M.+st'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 1);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should allow to find using case insensitive like', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {like: 'm.+st', options: 'i'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 1);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should allow to find using case insensitive like', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {content: {like: 'HELLO', options: 'i'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 1);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should support like for no match', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {like: 'M.+XY'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 0);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should allow to find using nlike', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {nlike: 'M.+st'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 0);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should allow to find using case insensitive nlike', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {nlike: 'm.+st', options: 'i'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 0);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     //   it('should support nlike for no match', function (done) {
+  //     //     Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //     //       Post.find({where: {title: {nlike: 'M.+XY'}}}, function (err, posts) {
+  //     //         should.not.exist(err);
+  //     //         posts.should.have.property('length', 1);
+  //     //         done();
+  //     //       });
+  //     //     });
+  //     //   });
+
+  //     it('should support "and" operator that is satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {and: [{title: 'My Post'}, {content: 'Hello'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 1);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support "and" operator that is not satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {and: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 0);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support "or" that is satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {or: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 1);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support "or" operator that is not satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {or: [{title: 'My Post1'}, {content: 'Hello1'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 0);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support "nor" operator that is satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {nor: [{title: 'My Post1'}, {content: 'Hello1'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 1);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support "nor" operator that is not satisfied', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {nor: [{title: 'My Post'}, {content: 'Hello1'}]}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 0);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support neq for match', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {title: {neq: 'XY'}}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 1);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       it('should support neq for no match', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.find({where: {title: {neq: 'My Post'}}}, function (err, posts) {
+  //             should.not.exist(err);
+  //             posts.should.have.property('length', 0);
+  //             done();
+  //           });
+  //         });
+  //       });
+
+  //       // The where object should be parsed by the connector
+  //       it('should support where for count', function (done) {
+  //         Post.create({title: 'My Post', content: 'Hello'}, function (err, post) {
+  //           Post.count({and: [{title: 'My Post'}, {content: 'Hello'}]}, function (err, count) {
+  //             should.not.exist(err);
+  //             count.should.be.equal(1);
+  //             Post.count({and: [{title: 'My Post1'}, {content: 'Hello'}]}, function (err, count) {
+  //               should.not.exist(err);
+  //               count.should.be.equal(0);
+  //               done();
+  //             });
+  //           });
+  //         });
+  //       });
+
+  //       // The where object should be parsed by the connector
+  //       it('should support where for destroyAll', function (done) {
+  //         Post.create({title: 'My Post1', content: 'Hello'}, function (err, post) {
+  //           Post.create({title: 'My Post2', content: 'Hello'}, function (err, post) {
+  //             Post.destroyAll({and: [
+  //               {title: 'My Post1'},
+  //               {content: 'Hello'}
+  //             ]}, function (err) {
+  //               should.not.exist(err);
+  //               Post.count(function (err, count) {
+  //                 should.not.exist(err);
+  //                 count.should.be.equal(1);
+  //                 done();
+  //               });
+  //             });
+  //           });
+  //         });
+  //       });
 
         // context('regexp operator', function() {
         //     before(function deleteExistingTestFixtures(done) {

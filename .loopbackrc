@@ -1,0 +1,9 @@
+{
+	"username": "heragededyinumeareffichi",
+	"password": "907a7aa88d5bf5390d84afee69f378b4ba58ac44",
+	"hostname": "dfect.cloudant.com",
+	"database": "connector-test",
+	"port": 5948,
+	"protocol": "https",
+	"debug": true
+}

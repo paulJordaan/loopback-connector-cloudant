@@ -53,6 +53,7 @@ describe('cloudant connector', function () {
     });
 
     User.hasMany(Post);
+    User.hasMany(Product);
     Post.belongsTo(User);
 	
 	});
@@ -61,7 +62,9 @@ describe('cloudant connector', function () {
 
     User.destroyAll(function () {
       Post.destroyAll(function () {
-        done();
+        Product.destroyAll(function () {
+          done();
+        });
       });
     });
   });
@@ -155,27 +158,53 @@ describe('cloudant connector', function () {
   //   });
   // });
 
+  // it('hasMany should support additional conditions', function (done) {
+  //   User.create({name: 'Al', age: 31, email:'al@strongloop'}, function (err1, u) {
+  //     u.posts.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
+  //           u.posts.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
+  //             User.find({
+  //               where: {
+  //                 name: "Al"
+  //               },include: {
+  //               relation: "posts",
+  //               scope: {
+  //                 where: {title: "Post1"}
+  //               }}}, function(err, p){
+  //                 should.not.exist(err);
+  //                 should.exist(p && p[0]);
+  //                 p[0].name.should.be.equal("Al");
+  //                 p[0].posts.should.be.array;
+  //                 should.exist(p[0].posts);
+  //                 // var po = p[0].posts;
+  //                 // po.content.should.be.equal("Post2 content");
+  //                 done();
+  //               });
+  //           });
+  //         });
+  //      });
+  // });
+
   it('hasMany should support additional conditions', function (done) {
     User.create({name: 'Al', age: 31, email:'al@strongloop'}, function (err1, u) {
       u.posts.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
             u.posts.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
-              User.find({
-                where: {
-                  name: "Al"
-                },include: {
-                relation: "posts",
-                scope: {
-                  where: {title: "Post1"}
-                }}}, function(err, p){
-                  should.not.exist(err);
-                  should.exist(p && p[0]);
-                  p[0].name.should.be.equal("Al");
-                  p[0].posts.should.be.array;
-                  should.exist(p[0].posts);
-                  // var po = p[0].posts;
-                  // po.content.should.be.equal("Post2 content");
-                  done();
-                });
+              // u.products.create({name: 'Product1'}, function (err, p3) {
+                User.findOne({
+                  where: {
+                    id: u.id
+                  },include: ['posts', 'products']}, function(err, p){
+                    should.not.exist(err);
+                    console.log(p);
+                    // should.exist(p && p[0]);
+                    // p[0].name.should.be.equal("Al");
+                    p.posts.should.be.array;
+                    p.products.should.be.array;
+                    // should.exist(p[0].posts);
+                    // var po = p[0].posts;
+                    // po.content.should.be.equal("Post2 content");
+                    done();
+                  });
+              // });
             });
           });
        });
@@ -609,144 +638,146 @@ describe('cloudant connector', function () {
           });
         });
 
-        // context('regexp operator', function() {
-        //     before(function deleteExistingTestFixtures(done) {
-        //       Post.destroyAll(done);
-        //     });
-        //     beforeEach(function createTestFixtures(done) {
-        //       Post.create([
-        //         {title: 'a', content: 'AAA'},
-        //         {title: 'b', content: 'BBB'}
-        //       ], done);
-        //     });
-        //     after(function deleteTestFixtures(done) {
-        //       Post.destroyAll(done);
-        //     });
+        context('regexp operator', function() {
+            before(function deleteExistingTestFixtures(done) {
+              Post.destroyAll(done);
+            });
+            beforeEach(function createTestFixtures(done) {
+              Post.create([
+                {title: 'a', content: 'AAA'},
+                {title: 'b', content: 'BBB'}
+              ], done);
+            });
+            after(function deleteTestFixtures(done) {
+              Post.destroyAll(done);
+            });
 
-        //     context('with regex strings', function() {
-        //       context('using no flags', function() {
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: '^A'}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
-        //       });
+            context('with regex strings', function() {
+              context('using no flags', function() {
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: '^A'}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
+              });
 
-        //       context('using flags', function() {
-        //         beforeEach(function addSpy() {
-        //           sinon.stub(console, 'warn');
-        //         });
-        //         afterEach(function removeSpy() {
-        //           console.warn.restore();
-        //         });
+              context('using flags', function() {
+                beforeEach(function addSpy() {
+                  sinon.stub(console, 'warn');
+                });
+                afterEach(function removeSpy() {
+                  console.warn.restore();
+                });
 
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: '^a/i'}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: '^a/i'}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
 
-        //         it('should print a warning when the global flag is set',
-        //             function(done) {
-        //           Post.find({where: {content: {regexp: '^a/g'}}}, function(err, posts) {
-        //             console.warn.calledOnce.should.be.ok;
-        //             done();
-        //           });
-        //         });
-        //       });
-        //     });
+                it('should print a warning when the global flag is set',
+                    function(done) {
+                  Post.find({where: {content: {regexp: '^a/g'}}}, function(err, posts) {
+                    console.warn.calledOnce.should.be.ok;
+                    done();
+                  });
+                });
+              });
+            });
 
-        //     context('with regex literals', function() {
-        //       context('using no flags', function() {
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: /^A/}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
-        //       });
-
-
-        //       context('using flags', function() {
-        //         beforeEach(function addSpy() {
-        //           sinon.stub(console, 'warn');
-        //         });
-        //         afterEach(function removeSpy() {
-        //           console.warn.restore();
-        //         });
-
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: /^a/i}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
-
-        //         it('should print a warning when the global flag is set',
-        //             function(done) {
-        //           Post.find({where: {content: {regexp: /^a/g}}}, function(err, posts) {
-        //             console.warn.calledOnce.should.be.ok;
-        //             done();
-        //           });
-        //         });
-        //       });
-        //     });
-
-        //     context('with regex object', function() {
-        //       context('using no flags', function() {
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: new RegExp(/^A/)}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
-        //       });
+            context('with regex literals', function() {
+              context('using no flags', function() {
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: /^A/}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
+              });
 
 
-        //       context('using flags', function() {
-        //         beforeEach(function addSpy() {
-        //           sinon.stub(console, 'warn');
-        //         });
-        //         afterEach(function removeSpy() {
-        //           console.warn.restore();
-        //         });
+              context('using flags', function() {
+                beforeEach(function addSpy() {
+                  sinon.stub(console, 'warn');
+                });
+                afterEach(function removeSpy() {
+                  console.warn.restore();
+                });
 
-        //         it('should work', function(done) {
-        //           Post.find({where: {content: {regexp: new RegExp(/^a/i)}}}, function(err, posts) {
-        //             should.not.exist(err);
-        //             posts.length.should.equal(1);
-        //             posts[0].content.should.equal('AAA');
-        //             done();
-        //           });
-        //         });
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: /^a/i}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
 
-        //         it('should print a warning when the global flag is set',
-        //             function(done) {
-        //           Post.find({where: {content: {regexp: new RegExp(/^a/g)}}}, function(err, posts) {
-        //             console.warn.calledOnce.should.be.ok;
-        //             done();
-        //           });
-        //         });
-        //       });
-        //     });
-        //   });
+                it('should print a warning when the global flag is set',
+                    function(done) {
+                  Post.find({where: {content: {regexp: /^a/g}}}, function(err, posts) {
+                    console.warn.calledOnce.should.be.ok;
+                    done();
+                  });
+                });
+              });
+            });
+
+            context('with regex object', function() {
+              context('using no flags', function() {
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: new RegExp(/^A/)}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
+              });
+
+
+              context('using flags', function() {
+                beforeEach(function addSpy() {
+                  sinon.stub(console, 'warn');
+                });
+                afterEach(function removeSpy() {
+                  console.warn.restore();
+                });
+
+                it('should work', function(done) {
+                  Post.find({where: {content: {regexp: new RegExp(/^a/i)}}}, function(err, posts) {
+                    should.not.exist(err);
+                    posts.length.should.equal(1);
+                    posts[0].content.should.equal('AAA');
+                    done();
+                  });
+                });
+
+                it('should print a warning when the global flag is set',
+                    function(done) {
+                  Post.find({where: {content: {regexp: new RegExp(/^a/g)}}}, function(err, posts) {
+                    console.warn.calledOnce.should.be.ok;
+                    done();
+                  });
+                });
+              });
+            });
+          });
 
 
   after(function (done) {
       User.destroyAll(function () {
-        Post.destroyAll(done);
+        Post.destroyAll(function(){
+          Product.destroyAll(done);
+        });
       });
     });
 

@@ -36,7 +36,8 @@ describe('cloudant connector', function () {
     Post = db.define('Post', {
       title: { type: String, length: 255, index: true },
       content: { type: String },
-      comments: [String]
+      comments: [String],
+      date: {type: Date}
     });
 
     Product = db.define('Product', {
@@ -211,9 +212,9 @@ describe('cloudant connector', function () {
   });
 
     it('should allow to find by id using where', function (done) {
-    Post.create({title: 'Post1', content: 'Post1 content'}, function (err, p1) {
+    Post.create({title: 'Post1', content: 'Post1 content', date: Date.now()}, function (err, p1) {
       Post.create({title: 'Post2', content: 'Post2 content'}, function (err, p2) {
-        Post.find({where: {id: p1.id}}, function (err, p) {
+        Post.find({where: {id: p1.id, date:{lt:Date.now()}}}, function (err, p) {
           should.not.exist(err);
           should.exist(p && p[0]);
           p.length.should.be.equal(1);
